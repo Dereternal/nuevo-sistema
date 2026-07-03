@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -8,8 +8,12 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
+  const checked = useRef(false)
 
   useEffect(() => {
+    if (checked.current) return
+    checked.current = true
+    
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
