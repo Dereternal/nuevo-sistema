@@ -84,7 +84,7 @@ export default function EntriesPage() {
         .from('products')
         .select('id, name, description, categories(name), units(name), presentaciones(id, name, variants(id, name, sku))')
         .order('name')
-      setProducts(productsData || [])
+      setProducts(productsData as any || [])
 
       // Cargar perfiles de usuarios para obtener nombres
       const userIds = entriesData?.map(e => e.created_by).filter(Boolean) || []
