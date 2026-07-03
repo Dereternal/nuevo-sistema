@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -9,8 +9,7 @@ export default function LoginPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
 
-  // Verificar sesión al cargar la página con useEffect
-  useState(() => {
+  useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
@@ -18,7 +17,7 @@ export default function LoginPage() {
       }
     }
     checkSession()
-  }, [])
+  }, [router, supabase])
 
   const handleGoogleLogin = async () => {
     setLoading(true)
