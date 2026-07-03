@@ -36,9 +36,34 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Si HAY usuario y está en login/register, redirigir a home
-  if (user && isAuthPage) {
-    return NextResponse.redirect(new URL('/', request.url))
+  // Si HAY usuario
+  if (user) {
+    // Verificar si tiene perfil en user_profiles
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const needsProfile = !profile
+
+    // Si está en login, redirigir según tenga perfil o no
+    if (request.nextUrl.pathname === '/login') {
+      if (needsProfile) {
+        return NextResponse.redirect(new URL('/register', request.url))
+      }
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // Si está en register pero ya tiene perfil, redirigir al dashboard
+    if (request.nextUrl.pathname === '/register' && !needsProfile) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    // Si no tiene perfil y no está en register ni callback, redirigir a register
+    if (needsProfile && !isAuthPage && !isCallback) {
+      return NextResponse.redirect(new URL('/register', request.url))
+    }
   }
 
   return supabaseResponse
