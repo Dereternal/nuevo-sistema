@@ -30,14 +30,19 @@ export default function LoginPage() {
   }, [router, supabase])
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/auth/callback'
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/auth/callback'
+        }
+      })
+      if (error) {
+        console.error('Error al iniciar sesión:', error)
+        alert('Error al iniciar sesión: ' + error.message)
       }
-    })
-    if (error) {
-      console.error('Error al iniciar sesión:', error)
+    } catch (err) {
+      console.error('Error:', err)
     }
   }
 
