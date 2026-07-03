@@ -1,14 +1,31 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
+  const router = useRouter()
   const supabase = createClient()
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          router.replace('/')
+        }
+      } catch (error) {
+        console.error('Error verificando sesión:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    checkSession()
+  }, [router, supabase])
 
   const handleGoogleLogin = async () => {
-    setLoading(true)
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -19,12 +36,18 @@ export default function LoginPage() {
       if (error) {
         console.error('Error:', error)
         alert('Error al iniciar sesión: ' + error.message)
-        setLoading(false)
       }
     } catch (err) {
       console.error('Error:', err)
-      setLoading(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#001396] border-t-transparent"></div>
+      </div>
+    )
   }
 
   return (
@@ -50,8 +73,7 @@ export default function LoginPage() {
 
         <button
           onClick={handleGoogleLogin}
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.3v2.74h3.57c2.08-1.92 3.28-4.74 3.28-8.05z" fill="#4285F4"/>
@@ -59,7 +81,7 @@ export default function LoginPage() {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
-          {loading ? 'Cargando...' : 'Iniciar sesión con Google'}
+          Iniciar sesión con Google
         </button>
       </div>
     </div>
