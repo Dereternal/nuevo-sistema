@@ -164,7 +164,7 @@ export default function ReportsPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = eporte__.csv
+    link.download = `reporte_${reportType}_${new Date().toISOString().split('T')[0]}.csv`
     link.click()
   }
 
