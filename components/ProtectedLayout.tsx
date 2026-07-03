@@ -12,16 +12,17 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        // Usar getSession en lugar de getUser
+        const { data: { session } } = await supabase.auth.getSession()
         
-        if (!user) {
+        if (!session) {
           router.push('/login')
           return
         }
 
         setLoading(false)
       } catch (error) {
-        console.error('Error verificando usuario:', error)
+        console.error('Error verificando sesión:', error)
         router.push('/login')
       }
     }
