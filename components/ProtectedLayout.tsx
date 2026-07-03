@@ -11,26 +11,19 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (!user) {
+          router.push('/login')
+          return
+        }
+
+        setLoading(false)
+      } catch (error) {
+        console.error('Error verificando usuario:', error)
         router.push('/login')
-        return
       }
-
-      // Verificar si tiene perfil
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single()
-
-      if (!profile) {
-        router.push('/register')
-        return
-      }
-
-      setLoading(false)
     }
 
     checkUser()
@@ -40,6 +33,7 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#001396] border-t-transparent"></div>
+        <p className="ml-2 text-gray-500">Verificando sesión...</p>
       </div>
     )
   }
