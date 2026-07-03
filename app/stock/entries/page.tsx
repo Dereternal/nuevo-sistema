@@ -70,7 +70,6 @@ export default function EntriesPage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      // Cargar ingresos
       const { data: entriesData, error: entriesError } = await supabase
         .from('stock_entries')
         .select('*')
@@ -79,14 +78,12 @@ export default function EntriesPage() {
       if (entriesError) throw entriesError
       setEntries(entriesData || [])
 
-      // Cargar productos
       const { data: productsData } = await supabase
         .from('products')
         .select('id, name, description, categories(name), units(name), presentaciones(id, name, variants(id, name, sku))')
         .order('name')
-      setProducts(productsData as any || [])
+      setProducts(productsData || [])
 
-      // Cargar perfiles de usuarios para obtener nombres
       const userIds = entriesData?.map(e => e.created_by).filter(Boolean) || []
       if (userIds.length > 0) {
         const { data: profilesData } = await supabase
@@ -325,13 +322,11 @@ export default function EntriesPage() {
     setShowForm(true)
   }
 
-  // Obtener nombre del producto por ID
   const getProductName = (id: number) => {
     const product = products.find(p => p.id === id)
     return product?.name || 'Producto eliminado'
   }
 
-  // Obtener nombre de la presentación por ID
   const getPresentacionName = (id: number) => {
     for (const p of products) {
       const found = p.presentaciones?.find(pr => pr.id === id)
@@ -340,7 +335,6 @@ export default function EntriesPage() {
     return '-'
   }
 
-  // Obtener nombre de la variante por ID
   const getVariantName = (id: number) => {
     for (const p of products) {
       for (const pr of (p.presentaciones || [])) {
@@ -351,7 +345,6 @@ export default function EntriesPage() {
     return '-'
   }
 
-  // Obtener usuario por ID
   const getUserName = (id: string) => {
     const user = users[id]
     return user || null
@@ -716,7 +709,7 @@ export default function EntriesPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="table-header border-b border-gray-200">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
@@ -784,4 +777,3 @@ export default function EntriesPage() {
     </div>
   )
 }
-
