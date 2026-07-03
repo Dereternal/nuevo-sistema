@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -44,10 +45,16 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-lg border border-gray-200">
         <div className="text-center">
-          <div className="w-20 h-20 bg-[#001396] rounded-full mx-auto flex items-center justify-center">
-            <span className="text-white font-bold text-2xl">VC</span>
+          <div className="flex justify-center mb-4">
+            <Image 
+              src="/logo.png" 
+              alt="Logo Valencia" 
+              width={80} 
+              height={80}
+              className="object-contain"
+            />
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-gray-800">
+          <h2 className="text-2xl font-bold text-gray-800">
             Valencia en Contingencia
           </h2>
           <p className="mt-1 text-sm text-gray-500">
