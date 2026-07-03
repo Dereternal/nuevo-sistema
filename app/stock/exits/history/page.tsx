@@ -16,6 +16,7 @@ interface ExitRecord {
   total_items: number
   created_at: string
   created_by: string
+  items?: any[]  // <-- Agregar esta línea
 }
 
 export default function ExitsHistoryPage() {
