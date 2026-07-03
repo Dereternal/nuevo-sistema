@@ -9,8 +9,8 @@ interface Product {
   id: number
   name: string
   description: string
-  categories?: { name: string }
-  units?: { name: string }
+  categories?: any
+  units?: any
   presentaciones?: Presentacion[]
 }
 
@@ -82,7 +82,7 @@ export default function EntriesPage() {
   .from('products')
   .select('id, name, description, categories!inner(name), units!inner(name), presentaciones(id, name, variants(id, name, sku))')
   .order('name')
-      setProducts(productsData || [])
+      setProducts(productsData as any || [])
 
       const userIds = entriesData?.map(e => e.created_by).filter(Boolean) || []
       if (userIds.length > 0) {
