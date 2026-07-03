@@ -2,36 +2,46 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 
 export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('id')
-          .eq('id', user.id)
-          .single()
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
         
-        if (profile) {
-          router.push('/')
+        if (session?.user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('id', session.user.id)
+            .single()
+          
+          if (profile) {
+            router.replace('/')
+          } else {
+            router.replace('/register')
+          }
         } else {
-          router.push('/register')
+          setLoading(false)
         }
+      } catch (error) {
+        console.error('Error:', error)
+        setLoading(false)
       }
     }
+
     checkUser()
   }, [router, supabase])
 
   const handleGoogleLogin = async () => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: window.location.origin + '/auth/callback'
@@ -44,6 +54,14 @@ export default function LoginPage() {
     } catch (err) {
       console.error('Error:', err)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#001396] border-t-transparent"></div>
+      </div>
+    )
   }
 
   return (

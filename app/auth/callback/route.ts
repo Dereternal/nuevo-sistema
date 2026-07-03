@@ -10,7 +10,21 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     
     if (!error) {
-      return NextResponse.redirect(new URL('/', origin))
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile) {
+          return NextResponse.redirect(new URL('/', origin))
+        } else {
+          return NextResponse.redirect(new URL('/register', origin))
+        }
+      }
     }
   }
 
