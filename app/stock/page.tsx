@@ -177,7 +177,7 @@ export default function StockPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = existencias_.csv
+    link.download = `existencias_${new Date().toISOString().split('T')[0]}.csv`
     link.click()
   }
 
