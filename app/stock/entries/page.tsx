@@ -79,9 +79,9 @@ export default function EntriesPage() {
       setEntries(entriesData || [])
 
       const { data: productsData } = await supabase
-        .from('products')
-        .select('id, name, description, categories(name), units(name), presentaciones(id, name, variants(id, name, sku))')
-        .order('name')
+  .from('products')
+  .select('id, name, description, categories!inner(name), units!inner(name), presentaciones(id, name, variants(id, name, sku))')
+  .order('name')
       setProducts(productsData || [])
 
       const userIds = entriesData?.map(e => e.created_by).filter(Boolean) || []
