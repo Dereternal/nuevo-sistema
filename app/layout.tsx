@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Header } from '@/components/layout/Header'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { ProtectedLayout } from '@/components/ProtectedLayout'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,15 +20,17 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <div className="min-h-screen flex flex-col bg-gray-50">
-          <Header />
-          <div className="flex flex-1">
-            <Sidebar />
-            <main className="flex-1 p-6 bg-gray-50 min-h-screen">
-              {children}
-            </main>
+        <ProtectedLayout>
+          <div className="min-h-screen flex flex-col bg-gray-50">
+            <Header />
+            <div className="flex flex-1">
+              <Sidebar />
+              <main className="flex-1 p-6 bg-gray-50 min-h-screen">
+                {children}
+              </main>
+            </div>
           </div>
-        </div>
+        </ProtectedLayout>
       </body>
     </html>
   )
