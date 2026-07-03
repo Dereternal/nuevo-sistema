@@ -1,23 +1,46 @@
 ﻿'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
-  const checked = useRef(false)
+  const [error, setError] = useState('')
+  const [initialCheckDone, setInitialCheckDone] = useState(false)
 
   useEffect(() => {
-    if (checked.current) return
-    checked.current = true
-    
+    // Mostrar error si viene de un fallo en el callback
+    if (searchParams.get('error') === 'session') {
+      setError('Error al iniciar sesión. Intenta de nuevo.')
+    }
+  }, [searchParams])
+
+  useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        router.replace('/')
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          // Verificar si tiene perfil
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('id', session.user.id)
+            .single()
+
+          if (profile) {
+            router.replace('/')
+          } else {
+            router.replace('/register')
+          }
+        }
+      } catch (err) {
+        console.error('Error checking session:', err)
+      } finally {
+        setInitialCheckDone(true)
       }
     }
     checkSession()
@@ -25,6 +48,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setLoading(true)
+    setError('')
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -34,13 +58,25 @@ export default function LoginPage() {
       })
       if (error) {
         console.error('Error:', error)
-        alert('Error al iniciar sesión: ' + error.message)
+        setError('Error al iniciar sesión: ' + error.message)
         setLoading(false)
       }
     } catch (err) {
       console.error('Error:', err)
+      setError('Error inesperado al iniciar sesión')
       setLoading(false)
     }
+  }
+
+  if (!initialCheckDone) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#001396] border-t-transparent mb-4"></div>
+          <p className="text-gray-500">Verificando sesión...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -64,6 +100,12 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600 text-center">{error}</p>
+          </div>
+        )}
+
         <button
           onClick={handleGoogleLogin}
           disabled={loading}
@@ -75,9 +117,24 @@ export default function LoginPage() {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
-          {loading ? 'Cargando...' : 'Iniciar sesión con Google'}
+          {loading ? 'Redirigiendo a Google...' : 'Iniciar sesión con Google'}
         </button>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#001396] border-t-transparent mb-4"></div>
+          <p className="text-gray-500">Cargando...</p>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }
