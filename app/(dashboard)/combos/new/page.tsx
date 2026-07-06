@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Save, X, Plus, Trash2, Package, Search } from 'lucide-react'
+import { Save, Plus, Trash2, Package, Search } from 'lucide-react'
 
 interface Product {
   id: number
@@ -29,7 +29,7 @@ interface ComboItem {
   id: string
   variant_id: number
   display_name: string
-  unit_name: string
+  presentacion_name: string
   quantity_per_combo: number
 }
 
@@ -37,7 +37,7 @@ interface ProductOption {
   variant_id: number
   display_name: string
   stock: number
-  unit: string
+  presentacion_name: string
 }
 
 export default function NewComboPage() {
@@ -52,7 +52,6 @@ export default function NewComboPage() {
   
   const [productSearch, setProductSearch] = useState('')
   const [showProductDropdown, setShowProductDropdown] = useState(false)
-  const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -99,7 +98,7 @@ export default function NewComboPage() {
             variant_id: variant.id,
             display_name: `${product.name}${presentacion.name ? ' - ' + presentacion.name : ''}${variant.name ? ' (' + variant.name + ')' : ''}`,
             stock,
-            unit: product.units?.name || ''
+            presentacion_name: presentacion.name || ''
           })
         }
       }
@@ -117,7 +116,7 @@ export default function NewComboPage() {
       id: Date.now().toString(),
       variant_id: option.variant_id,
       display_name: option.display_name,
-      unit_name: option.unit,
+      presentacion_name: option.presentacion_name,
       quantity_per_combo: 1
     }])
     setShowProductDropdown(false)
@@ -139,6 +138,13 @@ export default function NewComboPage() {
     if (!name.trim()) { alert('El nombre del combo es obligatorio'); return }
     if (!categoryId) { alert('Selecciona una categoría'); return }
     if (items.length === 0) { alert('Agrega al menos un producto al combo'); return }
+
+    // Validar que todas las cantidades sean > 0
+    const invalidItems = items.filter(i => !i.quantity_per_combo || i.quantity_per_combo <= 0)
+    if (invalidItems.length > 0) {
+      alert('Todos los productos deben tener una cantidad mayor a 0')
+      return
+    }
 
     setSaving(true)
     try {
@@ -258,7 +264,7 @@ export default function NewComboPage() {
                       onClick={() => addItem(opt)}
                     >
                       <span className="text-sm">{opt.display_name}</span>
-                      <span className="text-xs text-gray-400">Stock: {opt.stock} {opt.unit}</span>
+                      <span className="text-xs text-gray-400">Stock: {opt.stock} {opt.presentacion_name}</span>
                     </div>
                   ))
                 ) : (
@@ -287,13 +293,24 @@ export default function NewComboPage() {
                     <label className="text-xs text-gray-500">Cant. por combo:</label>
                     <input
                       type="number"
-                      value={item.quantity_per_combo}
-                      onChange={(e) => updateQuantity(index, parseFloat(e.target.value) || 0)}
+                      value={item.quantity_per_combo || ''}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        if (val === '' || val === '0') {
+                          updateQuantity(index, 0)
+                        } else {
+                          const parsed = parseFloat(val)
+                          if (!isNaN(parsed) && parsed > 0) {
+                            updateQuantity(index, parsed)
+                          }
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      placeholder="0"
                       className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#001396]"
-                      min="0.01"
-                      step="0.01"
+                      required
                     />
-                    <span className="text-xs text-gray-400 w-8">{item.unit_name}</span>
+                    <span className="text-xs text-gray-400 w-24 truncate">{item.presentacion_name}</span>
                   </div>
                   <button
                     type="button"

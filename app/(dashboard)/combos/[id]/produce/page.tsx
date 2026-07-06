@@ -20,7 +20,6 @@ interface VariantInfo {
   presentacion_name: string
   product_id: number
   product_name: string
-  unit_name: string
 }
 
 interface ComboDetail {
@@ -101,31 +100,22 @@ export default function ProduceComboPage() {
 
           const { data: productsData } = await supabase
             .from('products')
-            .select('id, name, unit_id')
+            .select('id, name')
             .in('id', productIds)
 
-          const unitIds = [...new Set(productsData?.map(p => p.unit_id) || [])]
-
-          const { data: unitsData } = await supabase
-            .from('units')
-            .select('id, name')
-            .in('id', unitIds)
-
-          const unitMap = new Map(unitsData?.map(u => [u.id, u.name]) || [])
-          const productMap = new Map(productsData?.map(p => [p.id, { name: p.name, unit_name: unitMap.get(p.unit_id) || '' }]) || [])
+          const productMap = new Map(productsData?.map(p => [p.id, p.name]) || [])
           const presentacionMap = new Map(presentacionesData?.map(p => [p.id, { name: p.name, product_id: p.product_id }]) || [])
 
           for (const v of variantsData || []) {
             const pres = presentacionMap.get(v.presentacion_id)
-            const prod = pres ? productMap.get(pres.product_id) : null
+            const prodName = pres ? productMap.get(pres.product_id) : null
             infoMap.set(v.id, {
               id: v.id,
               name: v.name,
               presentacion_id: v.presentacion_id,
               presentacion_name: pres?.name || '',
               product_id: pres?.product_id || 0,
-              product_name: prod?.name || 'Producto',
-              unit_name: prod?.unit_name || ''
+              product_name: prodName || 'Producto'
             })
           }
         }
