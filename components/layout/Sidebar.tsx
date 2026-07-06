@@ -38,6 +38,7 @@ const menuItems = [
     submenu: [
       { icon: PlusCircle, label: 'Crear Productos', href: '/products' },
       { icon: ClipboardList, label: 'Existencias', href: '/stock' },
+      { icon: Layers, label: 'Combos', href: '/combos' },
     ]
   },
   { 
