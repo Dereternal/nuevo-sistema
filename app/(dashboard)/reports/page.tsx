@@ -30,6 +30,8 @@ export default function ReportsPage() {
   const [filterCategory, setFilterCategory] = useState('')
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
   const [reportType, setReportType] = useState('stock')
+  const [conversionData, setConversionData] = useState<any[]>([])
+  const [combos, setCombos] = useState<any[]>([])
   const [userRole, setUserRole] = useState<string>('')
   const [hasPermission, setHasPermission] = useState(false)
   const supabase = createClient()
@@ -115,6 +117,39 @@ export default function ReportsPage() {
       }
 
       setReportData(reportData)
+
+      // Cargar datos de conversiones a combos
+      const { data: conversionsData } = await supabase
+        .from('stock_exits')
+        .select('*')
+        .eq('type', 'conversion')
+        .order('exit_date', { ascending: false })
+        .limit(50)
+
+      const combosList: any[] = []
+      if (conversionsData) {
+        for (const conv of conversionsData) {
+          const { data: itemsData } = await supabase
+            .from('stock_exit_items')
+            .select(`*, products(name), variants(name), presentaciones(name)`)
+            .eq('stock_exit_id', conv.id)
+
+          const { data: prodData } = await supabase
+            .from('combo_productions')
+            .select('*, combos(name)')
+            .eq('stock_exit_id', conv.id)
+            .single()
+
+          combosList.push({
+            ...conv,
+            items: itemsData || [],
+            combo_name: prodData?.combos?.name || 'Desconocido',
+            quantity_produced: prodData?.quantity_produced || 0
+          })
+        }
+      }
+      setConversionData(conversionsData || [])
+      setCombos(combosList)
     } catch (error) {
       console.error('Error cargando reporte:', error)
       alert('Error al cargar el reporte')
@@ -139,6 +174,7 @@ export default function ReportsPage() {
     if (reportType === 'stock') return true
     if (reportType === 'entries') return item.total_entries > 0
     if (reportType === 'exits') return item.total_exits > 0
+    if (reportType === 'conversions') return true
     return true
   })
 
@@ -164,7 +200,8 @@ export default function ReportsPage() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = `reporte_${reportType}_${new Date().toISOString().split('T')[0]}.csv`
+    link.download = 
+`reporte_${reportType}_${new Date().toISOString().split('T')[0]}.csv`
     link.click()
   }
 
@@ -238,6 +275,7 @@ export default function ReportsPage() {
               <option value="stock">Stock Actual</option>
               <option value="entries">Ingresos</option>
               <option value="exits">Egresos</option>
+        <option value="conversions">Conversiones a Combos</option>
             </select>
           </div>
 
@@ -288,6 +326,7 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      {reportType !== 'conversions' && (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <p className="text-xs text-gray-500 uppercase">Total Productos</p>
@@ -308,12 +347,53 @@ export default function ReportsPage() {
           </p>
         </div>
       </div>
+      )}
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {loading ? (
           <div className="p-8 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#001396] border-t-transparent"></div>
             <p className="mt-2 text-gray-500">Cargando reporte...</p>
+          </div>
+        ) : reportType === 'conversions' ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="table-header border-b border-gray-200">
+                <tr>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">N° Control</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Combo Generado</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Cant. Producida</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Productos Usados</th>
+                </tr>
+              </thead>
+              <tbody>
+                {combos.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-gray-500">
+                      <FileText size={48} className="mx-auto text-gray-300 mb-3" />
+                      <p>No hay conversiones a combos registradas</p>
+                    </td>
+                  </tr>
+                ) : (
+                  combos.map((conv: any, index: number) => (
+                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="py-3 px-4 text-sm font-medium text-gray-800">{conv.control_number}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {new Date(conv.exit_date).toLocaleDateString('es-ES')}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-purple-700 font-medium">{conv.combo_name}</td>
+                      <td className="py-3 px-4 text-sm font-bold text-gray-800">{conv.quantity_produced}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {conv.items?.map((item: any) => 
+                          `${item.quantity} ${item.products?.name || ''}${item.variants?.name ? ' (' + item.variants.name + ')' : ''}`
+                        ).join(', ')}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         ) : displayedData.length === 0 ? (
           <div className="p-8 text-center">
